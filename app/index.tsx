@@ -242,7 +242,7 @@ export default function EntryScreen() {
                 style={styles.closeButton}
                 onPress={() => setShowLoginModal(false)}
               >
-                <X size={24} color="#666" />
+                <MaterialIcons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -365,7 +365,7 @@ export default function EntryScreen() {
                 style={styles.closeButton}
                 onPress={() => setShowPrivacyModal(false)}
               >
-                <X size={24} color="#666" />
+                <MaterialIcons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -463,7 +463,7 @@ export default function EntryScreen() {
                 style={styles.closeButton}
                 onPress={() => setShowImprintModal(false)}
               >
-                <X size={24} color="#666" />
+                <MaterialIcons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
 

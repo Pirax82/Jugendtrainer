@@ -44,8 +44,18 @@ function AppContent() {
   const { loading: authLoading } = useAuth();
   const { loading: teamsLoading } = useTeams();
   const { loading: tournamentsLoading } = useTournaments();
+  const [forceReady, setForceReady] = React.useState(false);
 
-  const isLoading = authLoading || teamsLoading || tournamentsLoading;
+  // Timeout to prevent infinite loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('Force ready after timeout');
+      setForceReady(true);
+    }, 10000); // 10 second timeout
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = !forceReady && (authLoading || teamsLoading || tournamentsLoading);
 
   if (isLoading) {
     return <SplashScreen />;
