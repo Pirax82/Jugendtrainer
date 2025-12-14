@@ -7,9 +7,38 @@ import { useAuth } from '../hooks/useAuth';
 import { useTeams } from '../hooks/useTeams';
 import { useTournaments } from '../hooks/useTournaments';
 import SplashScreen from '../components/layout/SplashScreen';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { theme } from '../constants/theme';
+import { View, Text } from 'react-native';
+
+// Error Boundary for catching crashes
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('App Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Etwas ist schiefgelaufen</Text>
+          <Text style={{ fontSize: 14, color: '#666', textAlign: 'center' }}>{this.state.error?.message}</Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function AppContent() {
   const { loading: authLoading } = useAuth();
@@ -68,18 +97,24 @@ function AppContent() {
 
 export default function RootLayout() {
   useEffect(() => {
-    ExpoSplashScreen.hideAsync().catch(() => {});
+    // Hide splash screen after a short delay to ensure app is ready
+    const timer = setTimeout(() => {
+      ExpoSplashScreen.hideAsync().catch(() => {});
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <TeamsProvider>
-          <TournamentsProvider>
-            <AppContent />
-          </TournamentsProvider>
-        </TeamsProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <TeamsProvider>
+            <TournamentsProvider>
+              <AppContent />
+            </TournamentsProvider>
+          </TeamsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
