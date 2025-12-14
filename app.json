@@ -4,7 +4,7 @@
     "slug": "tvs-jugendtrainer",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/appstore-icon-1024.png",
     "scheme": "tvsjugendtrainer",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
@@ -49,6 +49,12 @@
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "11d91eea-fef4-4767-8ce8-8c753b86593e"
+      }
     }
   }
 }

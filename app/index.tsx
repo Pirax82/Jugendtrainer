@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Eye, EyeOff, Users, Trophy, ChevronRight, X, Shield, FileText } from 'lucide-react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function EntryScreen() {
   const router = useRouter();
@@ -172,13 +172,13 @@ export default function EntryScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Users size={48} color="#fff" strokeWidth={1.5} />
+              <MaterialIcons name="people" size={48} color="#fff" />
               <Text style={styles.cardTitle}>Zuschauer</Text>
               <Text style={styles.cardDescription}>
                 Live-Ergebnisse verfolgen{'\n'}Turniere & Spiele ansehen
               </Text>
               <View style={styles.cardArrow}>
-                <ChevronRight size={24} color="#fff" />
+                <MaterialIcons name="chevron-right" size={24} color="#fff" />
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -195,13 +195,13 @@ export default function EntryScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Trophy size={48} color="#fff" strokeWidth={1.5} />
+              <MaterialIcons name="emoji-events" size={48} color="#fff" />
               <Text style={styles.cardTitle}>Trainer</Text>
               <Text style={styles.cardDescription}>
                 Teams verwalten{'\n'}Turniere organisieren
               </Text>
               <View style={styles.cardArrow}>
-                <ChevronRight size={24} color="#fff" />
+                <MaterialIcons name="chevron-right" size={24} color="#fff" />
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -312,9 +312,9 @@ export default function EntryScreen() {
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff size={20} color="#666" />
+                      <MaterialIcons name="visibility-off" size={20} color="#666" />
                     ) : (
-                      <Eye size={20} color="#666" />
+                      <MaterialIcons name="visibility" size={20} color="#666" />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -359,7 +359,7 @@ export default function EntryScreen() {
         <View style={styles.legalModalOverlay}>
           <View style={styles.legalModalContent}>
             <View style={styles.legalModalHeader}>
-              <Shield size={28} color="#e53e3e" />
+              <MaterialIcons name="shield" size={28} color="#e53e3e" />
               <Text style={styles.legalModalTitle}>Datenschutz</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
@@ -457,7 +457,7 @@ export default function EntryScreen() {
         <View style={styles.legalModalOverlay}>
           <View style={styles.legalModalContent}>
             <View style={styles.legalModalHeader}>
-              <FileText size={28} color="#e53e3e" />
+              <MaterialIcons name="description" size={28} color="#e53e3e" />
               <Text style={styles.legalModalTitle}>Impressum</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
