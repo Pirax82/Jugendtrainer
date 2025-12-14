@@ -1,0 +1,165 @@
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
+
+require 'json'
+podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
+
+ENV['RCT_NEW_ARCH_ENABLED'] = '0' if podfile_properties['newArchEnabled'] == 'false'
+ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+
+platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+install! 'cocoapods',
+  :deterministic_uuids => false
+
+prepare_react_native_project!
+
+target 'TVSJugendtrainer' do
+  use_expo_modules!
+
+  if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
+    config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+  else
+    config_command = [
+      'npx',
+      'expo-modules-autolinking',
+      'react-native-config',
+      '--json',
+      '--platform',
+      'ios'
+    ]
+  end
+
+  config = use_native_modules!(config_command)
+
+  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
+    )
+
+    # This is necessary for Xcode 14, because it signs resource bundles by default
+    # when building for devices.
+    installer.target_installation_results.pod_target_installation_results
+      .each do |pod_name, target_installation_result|
+      target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
+        resource_bundle_target.build_configurations.each do |config|
+          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
+      end
+    end
+
+    # ---- Jugendtrainer build fixes + debug logging (runs on every `pod install`) ----
+    begin
+      debug_log_path = File.join(__dir__, '..', '.cursor', 'debug.log')
+      log = lambda do |hypothesis_id, location, message, data|
+        payload = {
+          timestamp: (Time.now.to_f * 1000).to_i,
+          sessionId: 'debug-session',
+          runId: 'pods',
+          hypothesisId: hypothesis_id,
+          location: location,
+          message: message,
+          data: data,
+        }
+        File.open(debug_log_path, 'a') { |f| f.puts(payload.to_json) }
+      end
+
+      expo_router_pkg = File.join(__dir__, '..', 'node_modules', 'expo-router', 'package.json')
+      expo_router_version = File.exist?(expo_router_pkg) ? (JSON.parse(File.read(expo_router_pkg))['version'] rescue 'unknown') : 'missing'
+      screens_pkg = File.join(__dir__, '..', 'node_modules', 'react-native-screens', 'package.json')
+      screens_version = File.exist?(screens_pkg) ? (JSON.parse(File.read(screens_pkg))['version'] rescue 'unknown') : 'missing'
+      log.call('A', 'ios/Podfile:post_install', 'versions', { expoRouter: expo_router_version, reactNativeScreens: screens_version })
+
+      link_header = File.join(__dir__, '..', 'node_modules', 'expo-router', 'ios', 'LinkPreview', 'LinkPreviewNativeNavigation.h')
+      if File.exist?(link_header)
+        content = File.read(link_header)
+        original = content.dup
+
+        if content.include?('#import <RNScreens/RNSDismissibleModalProtocol.h>') &&
+           !content.include?('__has_include(<RNScreens/RNSDismissibleModalProtocol.h>)')
+          content.gsub!(
+            '#import <RNScreens/RNSDismissibleModalProtocol.h>',
+            <<~HDR.chomp
+            #if __has_include(<RNScreens/RNSDismissibleModalProtocol.h>)
+            #import <RNScreens/RNSDismissibleModalProtocol.h>
+            #else
+            @protocol RNSDismissibleModalProtocol;
+            #endif
+            HDR
+          )
+        end
+
+        if content.include?('#import <RNScreens/RNSTabBarController.h>') &&
+           !content.include?('__has_include(<RNScreens/RNSTabBarController.h>)')
+          content.gsub!(
+            '#import <RNScreens/RNSTabBarController.h>',
+            <<~HDR.chomp
+            #if __has_include(<RNScreens/RNSTabBarController.h>)
+            #import <RNScreens/RNSTabBarController.h>
+            #else
+            @class UITabBarController;
+            #endif
+            HDR
+          )
+        end
+
+        if content != original
+          File.write(link_header, content)
+          log.call('A', 'ios/Podfile:post_install', 'patched LinkPreviewNativeNavigation.h', {})
+        end
+      end
+
+      lottie_animation_view = File.join(__dir__, '..', 'node_modules', 'lottie-react-native', 'ios', 'LottieReactNative', 'AnimationViewManagerModule.swift')
+      if File.exist?(lottie_animation_view)
+        content = File.read(lottie_animation_view)
+        original = content.dup
+        content.gsub!(/self\.bridge\.uiManager/, 'self.bridge?.uiManager')
+        if content != original
+          File.write(lottie_animation_view, content)
+          log.call('B', 'ios/Podfile:post_install', 'patched lottie AnimationViewManagerModule.swift', {})
+        end
+      end
+
+      lottie_container_view = File.join(__dir__, '..', 'node_modules', 'lottie-react-native', 'ios', 'LottieReactNative', 'ContainerView.swift')
+      if File.exist?(lottie_container_view)
+        content = File.read(lottie_container_view)
+        original = content.dup
+        content.gsub!(/super\.removeReactSubview\(animationView\)/, 'if let oldView = animationView { super.removeReactSubview(oldView) }')
+        if content != original
+          File.write(lottie_container_view, content)
+          log.call('B', 'ios/Podfile:post_install', 'patched lottie ContainerView.swift', {})
+        end
+      end
+
+      keyboard_controller_view = File.join(__dir__, '..', 'node_modules', 'react-native-keyboard-controller', 'ios', 'views', 'KeyboardControllerViewManager.swift')
+      if File.exist?(keyboard_controller_view)
+        content = File.read(keyboard_controller_view)
+        original = content.dup
+        content.gsub!(/return KeyboardControllerView\(frame: CGRect\.zero, bridge: bridge\)/, 'return KeyboardControllerView(frame: CGRect.zero, bridge: bridge!)')
+        content.gsub!(/(\s)bridge\.uiManager\.addUIBlock/, '\\1bridge?.uiManager.addUIBlock')
+        content.gsub!(/KeyboardController\.shared\(\)\?\./, 'KeyboardController.shared().')
+        content.gsub!(/body: nil\)/, 'body: NSNull())')
+        if content != original
+          File.write(keyboard_controller_view, content)
+          log.call('B', 'ios/Podfile:post_install', 'patched keyboard-controller KeyboardControllerViewManager.swift', {})
+        end
+      end
+    rescue => e
+      puts "⚠️ Jugendtrainer post_install patch error: #{e}"
+    end
+
+  end
+end
