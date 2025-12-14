@@ -16,7 +16,9 @@
         "CFBundleDisplayName": "TVS Jugendtrainer",
         "NSCalendarsUsageDescription": "Wir benötigen Zugriff auf deinen Kalender, um Turniertermine zu speichern.",
         "NSCalendarsFullAccessUsageDescription": "Wir benötigen vollen Zugriff auf deinen Kalender, um Turniertermine zu verwalten.",
-        "NSRemindersUsageDescription": "Wir benötigen Zugriff auf Erinnerungen für Turnierbenachrichtigungen."
+        "NSRemindersUsageDescription": "Wir benötigen Zugriff auf Erinnerungen für Turnierbenachrichtigungen.",
+        "NSContactsUsageDescription": "Wir benötigen Zugriff auf deine Kontakte, um Spieler und Trainer hinzuzufügen.",
+        "NSCameraUsageDescription": "Wir benötigen Zugriff auf die Kamera, um Profilbilder und Teamfotos aufzunehmen."
       }
     },
     "android": {
