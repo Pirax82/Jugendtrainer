@@ -2,7 +2,7 @@
   "expo": {
     "name": "TVS Jugendtrainer",
     "slug": "tvs-jugendtrainer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/appstore-icon-1024.png",
     "scheme": "tvsjugendtrainer",
@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tekanet.jugendtrainer",
+      "buildNumber": "9",
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleDisplayName": "TVS Jugendtrainer",
