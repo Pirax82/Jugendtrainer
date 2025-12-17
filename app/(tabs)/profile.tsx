@@ -139,7 +139,7 @@ export default function ProfileScreen() {
       
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160 }]}
       >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
@@ -279,8 +279,8 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Fixed Logout Button at Bottom */}
-      <View style={[styles.logoutContainer, { paddingBottom: insets.bottom + theme.spacing.md }]}>
+      {/* Fixed Logout Button at Bottom - positioned above TabBar */}
+      <View style={[styles.logoutContainer, { bottom: insets.bottom + 60 }]}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
           <MaterialIcons name="logout" size={22} color={theme.colors.error} />
           <Text style={styles.logoutButtonText}>Abmelden</Text>
@@ -520,12 +520,11 @@ const styles = StyleSheet.create({
   },
   logoutContainer: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: theme.colors.background,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
