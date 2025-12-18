@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Screen from '../../components/layout/Screen';
@@ -8,6 +9,7 @@ import { theme } from '../../constants/theme';
 
 export default function ViewerInfoScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
   const openURL = (url: string) => {
@@ -15,7 +17,23 @@ export default function ViewerInfoScreen() {
   };
 
   const handleLeave = () => {
-    router.replace('/');
+    // Get the ROOT navigator (parent of the Tab navigator)
+    const rootNavigation = navigation.getParent();
+    if (rootNavigation) {
+      rootNavigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    } else {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    }
   };
 
   return (
@@ -115,7 +133,7 @@ export default function ViewerInfoScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Version 1.0.0</Text>
+          <Text style={styles.footerText}>Version 1.0.1</Text>
           <Text style={styles.footerText}>© 2025 Frank Giegerich</Text>
         </View>
 

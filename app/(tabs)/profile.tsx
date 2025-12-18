@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Screen from '../../components/layout/Screen';
@@ -12,6 +13,7 @@ import { theme } from '../../constants/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user, isAdmin, signOut, loading } = useAuth();
   const { teams } = useTeams();
@@ -29,10 +31,30 @@ export default function ProfileScreen() {
     );
   }
 
+  // Navigate to entry screen (Trainer/Zuschauer selection) using root navigator
+  const navigateToEntryScreen = () => {
+    const rootNavigation = navigation.getParent();
+    if (rootNavigation) {
+      rootNavigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    } else {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    }
+  };
+
   const handleSignOut = async () => {
     if (Platform.OS === 'web') {
       await signOut();
-      router.replace('/');
+      navigateToEntryScreen();
     } else {
       Alert.alert(
         'Abmelden',
@@ -44,7 +66,7 @@ export default function ProfileScreen() {
             style: 'destructive',
             onPress: async () => {
               await signOut();
-              router.replace('/');
+              navigateToEntryScreen();
             },
           },
         ]

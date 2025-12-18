@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Screen from '../../components/layout/Screen';
 import { useTournaments } from '../../hooks/useTournaments';
@@ -9,6 +10,7 @@ import { theme } from '../../constants/theme';
 
 export default function ViewerTournamentsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { tournaments, getTournamentMatches } = useTournaments();
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -21,9 +23,26 @@ export default function ViewerTournamentsScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLoginPress = () => {
-    // Navigate to central entry screen for login
-    router.replace('/');
+  // Exit viewer mode and go back to entry screen (Trainer/Zuschauer selection)
+  const handleExitPress = () => {
+    // Get the ROOT navigator (parent of the Tab navigator)
+    const rootNavigation = navigation.getParent();
+    
+    if (rootNavigation) {
+      rootNavigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    } else {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'index' }],
+        })
+      );
+    }
   };
 
   // Filter tournaments from last week and current week
@@ -122,13 +141,16 @@ export default function ViewerTournamentsScreen() {
           <Text style={styles.headerTitle}>Jugendtrainer</Text>
           <Text style={styles.headerSubtitle}>Zuschauer-Ansicht</Text>
         </View>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleLoginPress}
-          activeOpacity={0.7}
+        <Pressable
+          style={({ pressed }) => [
+            styles.loginButton,
+            pressed && { opacity: 0.7, backgroundColor: theme.colors.primary + '20' }
+          ]}
+          onPress={handleExitPress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <MaterialIcons name="login" size={20} color={theme.colors.primary} />
-        </TouchableOpacity>
+          <MaterialIcons name="exit-to-app" size={24} color={theme.colors.primary} />
+        </Pressable>
       </View>
 
       {recentTournaments.length === 0 ? (
@@ -173,13 +195,13 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   loginButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colors.primary,
   },
   list: {

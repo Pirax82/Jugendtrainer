@@ -219,7 +219,7 @@ export default function EntryScreen() {
             <Text style={styles.footerLink}>Impressum</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.footerVersion}>Version 1.0.0</Text>
+        <Text style={styles.footerVersion}>Version 1.0.1</Text>
       </View>
 
       {/* Login Modal */}
