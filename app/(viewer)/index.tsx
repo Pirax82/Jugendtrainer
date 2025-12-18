@@ -23,7 +23,7 @@ export default function ViewerTournamentsScreen() {
 
   const handleLoginPress = () => {
     // Navigate to central entry screen for login
-    router.push('/');
+    router.replace('/');
   };
 
   // Filter tournaments from last week and current week
