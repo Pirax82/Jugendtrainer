@@ -149,19 +149,20 @@ function buildPrompt(tournament: any, matches: any[], topScorers: any[], stats: 
     prompt += `\n`;
   }
 
-  // Special notes from trainer
-  if (specialNotes && specialNotes.trim()) {
-    prompt += `**Besondere Hinweise vom Trainer:**\n`;
-    prompt += `${specialNotes.trim()}\n\n`;
-  }
-
   prompt += `Erstelle einen kurzen Turnierbericht (300-400 Wörter) mit:\n`;
   prompt += `1. Kreative Überschrift\n`;
   prompt += `2. Kurzes Intro\n`;
   prompt += `3. Erwähnung aller Spieler\n`;
   prompt += `4. Spielergebnisse\n`;
   prompt += `5. Torschützenliste\n`;
-  prompt += `6. Positives Fazit\n`;
+  prompt += `6. Positives Fazit\n\n`;
+
+  // Special notes from trainer - placed at the end with HIGH PRIORITY
+  if (specialNotes && specialNotes.trim()) {
+    prompt += `⚠️ WICHTIG - BESONDERE ANMERKUNGEN VOM TRAINER (MÜSSEN VOLLSTÄNDIG IM BERICHT ERWÄHNT WERDEN):\n`;
+    prompt += `"${specialNotes.trim()}"\n\n`;
+    prompt += `Diese Anmerkungen des Trainers sind sehr wichtig und MÜSSEN prominent und vollständig im Bericht berücksichtigt werden. Baue alle genannten Punkte in den Fließtext ein.\n`;
+  }
 
   return prompt;
 }
@@ -268,12 +269,6 @@ function buildSeasonPrompt(team: any, period: string, tournaments: any[], stats:
     prompt += `\n`;
   }
 
-  // Special notes from trainer
-  if (specialNotes && specialNotes.trim()) {
-    prompt += `**Besondere Hinweise vom Trainer:**\n`;
-    prompt += `${specialNotes.trim()}\n\n`;
-  }
-
   prompt += `Erstelle einen Saisonbericht (400-500 Wörter) mit:\n`;
   prompt += `1. Kreative Überschrift die den Zeitraum widerspiegelt\n`;
   prompt += `2. Einleitung mit Überblick über den Berichtszeitraum\n`;
@@ -281,7 +276,14 @@ function buildSeasonPrompt(team: any, period: string, tournaments: any[], stats:
   prompt += `4. Analyse der Spielbilanz und Entwicklung\n`;
   prompt += `5. Würdigung der Top-Torschützen\n`;
   prompt += `6. Positiver Ausblick und Fazit\n`;
-  prompt += `\nDer Bericht soll motivierend und würdigend sein, geeignet für Eltern und Vereinszeitung.`;
+  prompt += `\nDer Bericht soll motivierend und würdigend sein, geeignet für Eltern und Vereinszeitung.\n\n`;
+
+  // Special notes from trainer - placed at the end with HIGH PRIORITY
+  if (specialNotes && specialNotes.trim()) {
+    prompt += `⚠️ WICHTIG - BESONDERE ANMERKUNGEN VOM TRAINER (MÜSSEN VOLLSTÄNDIG IM BERICHT ERWÄHNT WERDEN):\n`;
+    prompt += `"${specialNotes.trim()}"\n\n`;
+    prompt += `Diese Anmerkungen des Trainers sind sehr wichtig und MÜSSEN prominent und vollständig im Bericht berücksichtigt werden. Baue alle genannten Punkte in den Fließtext ein.\n`;
+  }
 
   return prompt;
 }

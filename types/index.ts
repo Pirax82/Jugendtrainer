@@ -72,6 +72,7 @@ export interface Match {
   status: MatchStatus;
   endZeit?: number;
   formation?: Formation; // Match-specific formation (overrides team default)
+  sortOrder?: number; // For custom ordering within tournament
   createdAt: number;
 }
 

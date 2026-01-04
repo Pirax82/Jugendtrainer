@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Screen from '../../components/layout/Screen';
@@ -16,8 +16,9 @@ fetch('http://127.0.0.1:7242/ingest/10e0df59-8984-489e-a8e0-68a25e6b5450',{metho
 
 export default function TournamentsScreen() {
   const router = useRouter();
-  const { tournaments, addTournament, getTournamentMatches } = useTournaments();
+  const { tournaments, addTournament, getTournamentMatches, refreshData } = useTournaments();
   const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [name, setName] = useState('');
   const [ort, setOrt] = useState('');
   const [datum, setDatum] = useState('');
@@ -51,6 +52,15 @@ export default function TournamentsScreen() {
     } catch (error) {
       console.error('Error adding tournament:', error);
       alert(`Fehler beim Erstellen: ${error}`);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -121,6 +131,14 @@ export default function TournamentsScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.colors.primary}
+              colors={[theme.colors.primary]}
+            />
+          }
         />
       )}
 

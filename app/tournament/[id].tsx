@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Alert, ActivityIndicator, Platform, TouchableWithoutFeedback, Share, Clipboard, Keyboard, KeyboardAvoidingView } from 'react-native';
 import FormationEditor from '../../components/feature/FormationEditor';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import { reportsApi } from '../../services/api';
 export default function TournamentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getTournamentById, getTournamentMatches, addMatch, updateTournament, updateMatchFormation, getMatchScore, getTournamentTopScorers, getTournamentStats, getMatchEvents, deleteTournament, deleteMatch } = useTournaments();
+  const { getTournamentById, getTournamentMatches, addMatch, updateTournament, updateMatchFormation, getMatchScore, getTournamentTopScorers, getTournamentStats, getMatchEvents, deleteTournament, deleteMatch, reorderMatch, refreshData } = useTournaments();
   const { teams, getPlayerById, getTeamPlayers } = useTeams();
   const [modalVisible, setModalVisible] = useState(false);
   const [teamId, setTeamId] = useState('');
@@ -28,6 +28,7 @@ export default function TournamentDetailScreen() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [specialNotesModalVisible, setSpecialNotesModalVisible] = useState(false);
   const [specialNotes, setSpecialNotes] = useState('');
+  const specialNotesRef = useRef('');
   const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
   const [formationEditorVisible, setFormationEditorVisible] = useState(false);
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export default function TournamentDetailScreen() {
   const [editDatum, setEditDatum] = useState('');
   const [editWetter, setEditWetter] = useState<Wetter | undefined>(undefined);
   const [editWetterPickerVisible, setEditWetterPickerVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const tournament = getTournamentById(id as string);
   const matches = getTournamentMatches(id as string);
@@ -80,7 +82,13 @@ export default function TournamentDetailScreen() {
       return;
     }
     setSpecialNotes('');
+    specialNotesRef.current = '';
     setSpecialNotesModalVisible(true);
+  };
+  
+  const handleSpecialNotesChange = (text: string) => {
+    setSpecialNotes(text);
+    specialNotesRef.current = text;
   };
 
   const handleGenerateReport = async () => {
@@ -205,7 +213,7 @@ export default function TournamentDetailScreen() {
         topScorers: scorersData,
         stats,
         allParticipants: allParticipantsData,
-        specialNotes: specialNotes.trim() || undefined,
+        specialNotes: specialNotesRef.current.trim() || undefined,
       });
 
       setReportText(data.report);
@@ -304,16 +312,22 @@ export default function TournamentDetailScreen() {
     }
   };
 
-  const renderMatch = ({ item }: any) => {
+  const renderMatch = ({ item, index }: { item: any; index: number }) => {
     const team = teams.find(t => t.id === item.teamId);
     const score = getMatchScore(item.id);
     const teamPlayers = getTeamPlayers(item.teamId);
     const isDeleting = deletingMatchId === item.id;
+    const isFirst = index === 0;
+    const isLast = index === matches.length - 1;
     
     const statusColors = {
       [MatchStatus.GEPLANT]: theme.colors.text.secondary,
       [MatchStatus.LAUFEND]: theme.colors.success,
       [MatchStatus.ABGESCHLOSSEN]: theme.colors.primary,
+    };
+
+    const handleReorder = async (direction: 'up' | 'down') => {
+      await reorderMatch(item.id, direction);
     };
 
     return (
@@ -324,6 +338,22 @@ export default function TournamentDetailScreen() {
       >
         <View style={styles.matchHeader}>
           <View style={styles.matchHeaderLeft}>
+            <View style={styles.reorderButtons}>
+              <TouchableOpacity 
+                onPress={(e) => { e.stopPropagation(); handleReorder('up'); }}
+                disabled={isFirst}
+                style={[styles.reorderButton, isFirst && styles.reorderButtonDisabled]}
+              >
+                <MaterialIcons name="keyboard-arrow-up" size={24} color={isFirst ? theme.colors.text.light : theme.colors.text.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={(e) => { e.stopPropagation(); handleReorder('down'); }}
+                disabled={isLast}
+                style={[styles.reorderButton, isLast && styles.reorderButtonDisabled]}
+              >
+                <MaterialIcons name="keyboard-arrow-down" size={24} color={isLast ? theme.colors.text.light : theme.colors.text.primary} />
+              </TouchableOpacity>
+            </View>
             <View style={[styles.statusBadge, { backgroundColor: statusColors[item.status] }]}>
               <Text style={styles.statusText}>
                 {item.status === MatchStatus.GEPLANT && 'Geplant'}
@@ -408,9 +438,30 @@ export default function TournamentDetailScreen() {
     );
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <Screen scroll={false} padding={false}>
       <View style={styles.headerActions}>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          activeOpacity={0.7}
+          disabled={refreshing}
+        >
+          <MaterialIcons 
+            name="refresh" 
+            size={24} 
+            color={refreshing ? theme.colors.text.light : theme.colors.primary} 
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.editButton}
           onPress={handleEditTournament}
@@ -734,7 +785,7 @@ export default function TournamentDetailScreen() {
                 
                 <Input
                   value={specialNotes}
-                  onChangeText={setSpecialNotes}
+                  onChangeText={handleSpecialNotesChange}
                   placeholder="z.B. Erstes Turnier der Saison, besondere Spielzüge, Wetterbedingungen..."
                   multiline
                   numberOfLines={4}
@@ -746,6 +797,7 @@ export default function TournamentDetailScreen() {
                     style={styles.skipButton}
                     onPress={() => {
                       setSpecialNotes('');
+                      specialNotesRef.current = '';
                       handleGenerateReport();
                     }}
                   >
@@ -1013,6 +1065,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: theme.spacing.sm,
   },
+  refreshButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.full,
+    ...theme.shadows.md,
+  },
   editButton: {
     width: 44,
     height: 44,
@@ -1179,6 +1240,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  reorderButtons: {
+    flexDirection: 'column',
+    marginRight: theme.spacing.sm,
+  },
+  reorderButton: {
+    padding: 2,
+  },
+  reorderButtonDisabled: {
+    opacity: 0.3,
   },
   deleteMatchButton: {
     flexDirection: 'row',

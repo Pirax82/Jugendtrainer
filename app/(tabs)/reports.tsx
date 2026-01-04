@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, FlatList, Alert, Share, Platform, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ export default function ReportsScreen() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [specialNotesModalVisible, setSpecialNotesModalVisible] = useState(false);
   const [specialNotes, setSpecialNotes] = useState('');
+  const specialNotesRef = useRef('');
 
   const dateRanges: { key: DateRange; label: string; days: number }[] = [
     { key: 'week', label: 'Letzte Woche', days: 7 },
@@ -148,7 +149,13 @@ export default function ReportsScreen() {
     }
 
     setSpecialNotes('');
+    specialNotesRef.current = '';
     setSpecialNotesModalVisible(true);
+  };
+  
+  const handleSpecialNotesChange = (text: string) => {
+    setSpecialNotes(text);
+    specialNotesRef.current = text;
   };
 
   const handleGenerateReport = async () => {
@@ -194,7 +201,7 @@ export default function ReportsScreen() {
 
       const { report } = await reportsApi.generateSeasonReport({
         ...reportData,
-        specialNotes: specialNotes.trim() || undefined,
+        specialNotes: specialNotesRef.current.trim() || undefined,
       });
       setReportText(report);
       setReportModalVisible(true);
@@ -448,7 +455,7 @@ export default function ReportsScreen() {
             <TextInput
               style={styles.specialNotesInput}
               value={specialNotes}
-              onChangeText={setSpecialNotes}
+              onChangeText={handleSpecialNotesChange}
               placeholder="z.B. Entwicklung der Mannschaft, besondere Erfolge, Herausforderungen..."
               placeholderTextColor={theme.colors.text.light}
               multiline
@@ -460,6 +467,7 @@ export default function ReportsScreen() {
                 style={styles.skipButton}
                 onPress={() => {
                   setSpecialNotes('');
+                  specialNotesRef.current = '';
                   handleGenerateReport();
                 }}
               >

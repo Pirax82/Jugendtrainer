@@ -133,7 +133,7 @@ export default function ViewerInfoScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Version 1.0.1</Text>
+          <Text style={styles.footerText}>Version 1.0.2</Text>
           <Text style={styles.footerText}>© 2025 Frank Giegerich</Text>
         </View>
 

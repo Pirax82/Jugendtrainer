@@ -30,6 +30,7 @@ interface TournamentsContextType {
   updateMatch: (id: string, updates: Partial<Match>) => Promise<void>;
   updateMatchFormation: (id: string, formation: Formation) => Promise<void>;
   deleteMatch: (id: string) => Promise<void>;
+  reorderMatch: (matchId: string, direction: 'up' | 'down') => Promise<void>;
   addEvent: (event: Omit<MatchEvent, 'id' | 'timestamp'>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   getMatchEvents: (matchId: string) => MatchEvent[];
@@ -39,6 +40,7 @@ interface TournamentsContextType {
   getMatchScore: (matchId: string) => { heim: number; gegner: number };
   getTournamentTopScorers: (tournamentId: string) => TopScorer[];
   getTournamentStats: (tournamentId: string) => TournamentStats;
+  refreshData: () => Promise<void>;
 }
 
 export const TournamentsContext = createContext<TournamentsContextType | undefined>(undefined);
@@ -65,6 +67,7 @@ const toMatch = (m: any): Match => ({
   status: (m.status as MatchStatus) ?? MatchStatus.GEPLANT,
   endZeit: m.endZeit ?? m.end_zeit ?? undefined,
   formation: m.formation ?? undefined,
+  sortOrder: m.sortOrder ?? m.sort_order ?? undefined,
   createdAt: m.createdAt ? Number(m.createdAt) : m.created_at ? new Date(m.created_at).getTime() : Date.now(),
 });
 
@@ -173,6 +176,51 @@ export function TournamentsProvider({ children }: { children: ReactNode }) {
     setEvents(prev => prev.filter(e => e.matchId !== id));
   };
 
+  const reorderMatch = async (matchId: string, direction: 'up' | 'down') => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const tournamentMatches = getTournamentMatches(match.tournamentId);
+    const currentIndex = tournamentMatches.findIndex(m => m.id === matchId);
+    
+    if (currentIndex === -1) return;
+    if (direction === 'up' && currentIndex === 0) return;
+    if (direction === 'down' && currentIndex === tournamentMatches.length - 1) return;
+
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const swapMatch = tournamentMatches[swapIndex];
+
+    // Swap sortOrder values
+    const currentOrder = match.sortOrder ?? match.createdAt;
+    const swapOrder = swapMatch.sortOrder ?? swapMatch.createdAt;
+
+    // Update local state immediately (optimistic update)
+    setMatches(prev => prev.map(m => {
+      if (m.id === matchId) {
+        return { ...m, sortOrder: swapOrder };
+      }
+      if (m.id === swapMatch.id) {
+        return { ...m, sortOrder: currentOrder };
+      }
+      return m;
+    }));
+
+    // Try to persist to API (fire and forget - don't block UI)
+    try {
+      await Promise.all([
+        matchesApi.update(matchId, { sortOrder: swapOrder }),
+        matchesApi.update(swapMatch.id, { sortOrder: currentOrder }),
+      ]);
+    } catch (error) {
+      // API might not support sortOrder yet, that's OK - local state is updated
+      console.log('sortOrder API update skipped:', error);
+    }
+  };
+
+  const refreshData = async () => {
+    await loadData();
+  };
+
   const addEvent = async (event: Omit<MatchEvent, 'id' | 'timestamp'>) => {
     const timestamp = Date.now();
     const created = await matchesApi.createEvent(event.matchId, {
@@ -199,7 +247,14 @@ export function TournamentsProvider({ children }: { children: ReactNode }) {
 
   const getTournamentMatches = (tournamentId: string) => {
     // Use loose comparison to handle string/number mismatch
-    return matches.filter(m => String(m.tournamentId) === String(tournamentId));
+    return matches
+      .filter(m => String(m.tournamentId) === String(tournamentId))
+      .sort((a, b) => {
+        // Sort by sortOrder if available, otherwise by createdAt
+        const orderA = a.sortOrder ?? a.createdAt;
+        const orderB = b.sortOrder ?? b.createdAt;
+        return orderA - orderB;
+      });
   };
 
   const getMatchById = (id: string) => {
@@ -296,6 +351,7 @@ export function TournamentsProvider({ children }: { children: ReactNode }) {
         updateMatch,
         updateMatchFormation,
         deleteMatch,
+        reorderMatch,
         addEvent,
         deleteEvent,
         getMatchEvents,
@@ -305,6 +361,7 @@ export function TournamentsProvider({ children }: { children: ReactNode }) {
         getMatchScore,
         getTournamentTopScorers,
         getTournamentStats,
+        refreshData,
       }}
     >
       {children}

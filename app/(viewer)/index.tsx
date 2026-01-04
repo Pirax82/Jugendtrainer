@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,17 +11,28 @@ import { theme } from '../../constants/theme';
 export default function ViewerTournamentsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { tournaments, getTournamentMatches } = useTournaments();
+  const { tournaments, getTournamentMatches, refreshData } = useTournaments();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Auto-refresh every 15 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshKey(prev => prev + 1);
+      refreshData();
     }, 15000);
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Exit viewer mode and go back to entry screen (Trainer/Zuschauer selection)
   const handleExitPress = () => {
@@ -166,6 +177,14 @@ export default function ViewerTournamentsScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           key={refreshKey}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.colors.primary}
+              colors={[theme.colors.primary]}
+            />
+          }
         />
       )}
     </Screen>
