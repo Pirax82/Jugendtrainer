@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tekanet.jugendtrainer",
-      "buildNumber": "10",
+      "buildNumber": "9",
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleDisplayName": "TVS Jugendtrainer",
