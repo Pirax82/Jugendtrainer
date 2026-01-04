@@ -1,0 +1,32 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Capture screenshots"
+  lane :screenshots do
+    capture_screenshots(
+      workspace: "TVSJugendtrainer.xcworkspace",
+      scheme: "TVSJugendtrainer",
+      devices: [
+        "iPhone 15 Pro Max",
+        "iPhone 15 Pro",
+        "iPhone SE (3rd generation)",
+        "iPad Pro 12.9-inch (6th generation)"
+      ],
+      output_directory: "./screenshots",
+      clear_previous_screenshots: true,
+      reinstall_app: false,
+      app_identifier: "com.tekanet.jugendtrainer"
+    )
+  end
+
+  desc "Upload screenshots to App Store Connect"
+  lane :upload_screenshots do
+    deliver(
+      skip_binary_upload: true,
+      skip_metadata: true,
+      overwrite_screenshots: true,
+      screenshots_path: "./screenshots"
+    )
+  end
+end
+
